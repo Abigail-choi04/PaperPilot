@@ -5,13 +5,21 @@ import os
 from core.zipper import create_zip
 from core.parser import parse_sections
 from core.formatter import generate_formats, get_available_formats
-
+from fastapi.responses import FileResponse
 from file_handlers.docx_handler import extract_text_from_docx
 from file_handlers.pdf_handler import extract_text_from_pdf
 from file_handlers.txt_handler import extract_text_from_txt
 
 app = FastAPI()
+from fastapi.middleware.cors import CORSMiddleware
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -24,6 +32,11 @@ def home():
 @app.get("/formats/")
 def list_formats():
     return {"available_formats": get_available_formats()}
+@app.get("/download/")
+def download_file(path: str):
+    if not os.path.exists(path):
+        return {"status": "error", "message": "File not found"}
+    return FileResponse(path, filename=os.path.basename(path))
 
 
 @app.post("/convert/")
